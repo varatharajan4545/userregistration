@@ -1,10 +1,9 @@
-
-const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
 const {
-  DynamoDBDocumentClient,
   GetCommand,
   PutCommand,QueryCommand
 } = require("@aws-sdk/lib-dynamodb");
+
+const {SingletonDb}=require('./config/db');
 const express = require("express");
 const cors = require('cors');
 const config=require('./config/index')
@@ -20,15 +19,14 @@ const authMiddleware = require("./middleware/authMiddleware");
 const app = express();
 app.use(loggerMiddleware);
 const USERS_TABLE = process.env.USERS_TABLE;
-const client = new DynamoDBClient();
-const dynamoDbClient = DynamoDBDocumentClient.from(client);
+const dynamoDbClient = SingletonDb.getInstance();
 
 app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
 
 
-
+// get user by Id
 
 app.get("/users/:userId",authMiddleware, async function (req, res) {
   const params = {
@@ -54,12 +52,11 @@ app.get("/users/:userId",authMiddleware, async function (req, res) {
 });
 
 
-
+// register user 
 
 app.post("/users", async function (req, res) {
   let { userName, email, firstName, lastName, phoneNumber, mobileNumber, country, state,password,dob } = req.body;
  
-  console.log('body of request ',JSON.stringify(req.body))
   const userId = uuidv4();
   const error=validation.validate(req.body)
   // Hash the password using bcryptjs
@@ -121,7 +118,7 @@ const queryemailCommand = new QueryCommand(emailparams);
   }
 });
 
-
+// login user
 
 
 app.post('/login', async (req, res) => {
@@ -164,7 +161,7 @@ else{
 
 
 
-
+// logout
 app.post('/logout', async (req, res) => {
   try {
     res.clearCookie('token');
